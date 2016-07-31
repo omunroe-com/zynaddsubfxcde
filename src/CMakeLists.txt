@@ -13,7 +13,7 @@ endif()
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckCXXSourceCompiles)
-<<<<<<< HEAD
+
 include(CheckCXXCompilerFlag) 
 
 if(NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Windows"))
