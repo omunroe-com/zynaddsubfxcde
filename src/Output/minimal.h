@@ -113,7 +113,7 @@ public:
 	using build_base::build_base;
 
 	NodeT& operator[](std::size_t idx) {
-		return *single_ptr_array<NodeT, Size>::get(idx, name, parent);
+		return *single_ptr_array<NodeT, Size>::get(idx, name, parent, idx);
 	}
 };
 
@@ -380,7 +380,7 @@ public:
 	build_multi<part_t, 16> part = ctor(this, "part"); // TODO: 16? 8?
 	build_multi<fx_t, 3> insefx = ctor(this, "insefx"); // TODO? how many?
 
-//	instrument_t* get_ins() { return this; }
+	instrument_t* get_ins() { return this; }
 
 /*	// TODO???
 	using volume_ptr_t = zyn::port<int>*(*)();

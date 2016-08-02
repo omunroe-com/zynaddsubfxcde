@@ -281,10 +281,6 @@ if(MinimalEnable)
 	list(APPEND AUDIO_LIBRARY_DIRS ${MINIMAL_LIBRARY_DIRS})
 endif()
 
-# build env script with all options set
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/env.in
-	${CMAKE_CURRENT_BINARY_DIR}/env @ONLY)
-
 # other include directories
 include_directories(${ZLIB_INCLUDE_DIRS} ${MXML_INCLUDE_DIRS})
 include_directories(${CMAKE_BINARY_DIR}/src) # for zyn-version.h ...
@@ -535,6 +531,9 @@ if(MinimalEnable)
 	# configure
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Output/${PLUGIN_NAME}.pc.in
 		${CMAKE_CURRENT_BINARY_DIR}/Output/${PLUGIN_NAME}.pc @ONLY)
+        # build env script with all options set
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/env.in
+			${CMAKE_CURRENT_BINARY_DIR}/env @ONLY)
 	
 	# add library
 	add_library(minimal-zynaddsubfx MODULE Output/minimal.cpp)
@@ -548,6 +547,8 @@ if(MinimalEnable)
 	)
 	
 	# install
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/env
+		DESTINATION "${INSTALL_LIB_DIR}/pkgconfig")
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Output/${PLUGIN_NAME}.pc"
 		DESTINATION "${INSTALL_LIB_DIR}/pkgconfig")
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Output/${PLUGIN_NAME}.pc"
