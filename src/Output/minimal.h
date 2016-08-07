@@ -248,6 +248,7 @@ private:
 	using c_note_on = note_on<use_no_port, use_no_port, self_port_templ>;
 	using c_note_off = note_off<use_no_port, use_no_port, self_port_templ>;
 
+	//! mostly an in_port_templ<const event_signal_t<T>*>
 	struct events_t_port_t : osc_in_port_t<notes_in>
 	{
 		zyn_tree_t* parent_ptr;
