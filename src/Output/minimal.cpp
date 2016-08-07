@@ -116,10 +116,10 @@ void zynaddsubfx_t::run_synth(unsigned long ,
 //    io::mlog << "write space: " << data.write_space()
 //        << " samples: " << sample_count << io::endl;
 
-    if( value().write_space() < buffersize )
+    if( audio_out::value().write_space() < buffersize )
         throw "warning: not enough write space! :-(";
     
-    io::mlog << "buf1: " << &value() << io::endl;
+    io::mlog << "buf1: " << &audio_out::value() << io::endl;
 
     master_functor mf { master, zynaddsubfx_t::sample_rate };
     value().write_func(mf, buffersize); // TODO: not sure about this value
