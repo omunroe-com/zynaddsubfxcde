@@ -113,8 +113,9 @@ void zynaddsubfx_t::run_synth(unsigned long ,
     {
     Master *master = middleware->spawnMaster();
 
-//    io::mlog << "write space: " << data.write_space()
-//        << " samples: " << sample_count << io::endl;
+    io::mlog << "write space: " << value().write_space()
+	 << " samples: " << samples_played
+	 << " buffer size: " << buffersize << io::endl;
 
     if( value().write_space() < buffersize )
         throw "warning: not enough write space! :-(";

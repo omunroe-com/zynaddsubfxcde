@@ -424,7 +424,7 @@ public:
 	void prepare();
 	bool advance(); // TODO: inline?
 	
-	void instantiate_first() { prepare(); }
+	void instantiate_first() { std::cerr << "instantiate zyn" << std::endl; prepare(); }
 };
 
 }
