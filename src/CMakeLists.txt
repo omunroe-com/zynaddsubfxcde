@@ -523,7 +523,8 @@ if(MinimalEnable)
 		INSTALL_LIB_DIR
 		INSTALL_INC_DIR
 		)
-	file(GLOB minimal-hdr ${CMAKE_CURRENT_SOURCE_DIR}/Output/*.h)
+	file(GLOB minimal-hdr
+		${CMAKE_CURRENT_SOURCE_DIR}/Output/minimal-zynaddsubfx.h)
 	
 	SET(PLUGIN_NAME "minimal-zynaddsubfx")
 	
@@ -536,7 +537,7 @@ if(MinimalEnable)
 			${CMAKE_CURRENT_BINARY_DIR}/env @ONLY)
 	
 	# add library
-	add_library(minimal-zynaddsubfx MODULE Output/minimal.cpp)
+	add_library(minimal-zynaddsubfx MODULE Output/minimal-zynaddsubfx.cpp)
 	target_link_libraries(minimal-zynaddsubfx
 		zynaddsubfx_core
 #		zynaddsubfx_nio

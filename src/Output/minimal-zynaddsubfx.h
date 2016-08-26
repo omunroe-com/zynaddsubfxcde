@@ -1,9 +1,9 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  minimal.cpp - Audio functions for the minimal sequencer
-  Copyright (C) 2002 Nasca Octavian Paul
-  Author: Nasca Octavian Paul
+  minimal.cpp - ZynAddSubFX plugin for the "minimal" sequencer
+  Copyright (C) 2014-2016 Johannes Lorenz
+  Author: Johannes Lorenz
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of version 2 of the GNU General Public License
@@ -137,7 +137,7 @@ struct pram : public command_with_ports<PortT>
 };
 
 template<class T>
-using build_inport = build<pram<in_port_templ<T>>>;
+using build_inport = build<pram<in_port_t<T>>>;
 
 struct kit0_t : nnode
 {
@@ -248,7 +248,7 @@ private:
 	using c_note_on = note_on<use_no_port, use_no_port, self_port_templ>;
 	using c_note_off = note_off<use_no_port, use_no_port, self_port_templ>;
 
-	//! mostly an in_port_templ<const event_signal_t<T>*>
+        //! mostly an in_port_t<event_signal_receiver_t<T>>
 	struct events_t_port_t : osc_in_port_t<notes_in>
 	{
 		zyn_tree_t* parent_ptr;
@@ -424,7 +424,7 @@ public:
 	void prepare();
 	bool advance(); // TODO: inline?
 	
-	void instantiate_first() { prepare(); }
+	void instantiate_first() { std::cerr << "instantiate zyn" << std::endl; prepare(); }
 };
 
 }

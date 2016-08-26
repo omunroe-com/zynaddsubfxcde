@@ -1,9 +1,9 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  minimal.cpp - Audio functions for the minimal sequencer
-  Copyright (C) 2002 Nasca Octavian Paul
-  Author: Nasca Octavian Paul
+  minimal.cpp - ZynAddSubFX plugin for the "minimal" sequencer
+  Copyright (C) 2014-2016 Johannes Lorenz
+  Author: Johannes Lorenz
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of version 2 of the GNU General Public License
@@ -19,7 +19,6 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 
 */
-// TODO: GPL 3
 
 #include "../globals.h"
 #include "../Misc/Util.h"
@@ -27,7 +26,8 @@
 #include "../Misc/Master.h"
 #include "../Misc/Config.h"
 
-#include "minimal.h"
+#include "minimal/io.h"
+#include "minimal-zynaddsubfx.h"
 
 // global variables required for linking:
 // TODO: make them class members?
@@ -113,8 +113,9 @@ void zynaddsubfx_t::run_synth(unsigned long ,
     {
     Master *master = middleware->spawnMaster();
 
-//    io::mlog << "write space: " << data.write_space()
-//        << " samples: " << sample_count << io::endl;
+    io::mlog << "write space: " << value().write_space()
+	 << " samples: " << samples_played
+	 << " buffer size: " << buffersize << io::endl;
 
     if( audio_out::value().write_space() < buffersize )
         throw "warning: not enough write space! :-(";
@@ -168,14 +169,14 @@ zyn_tree_t::events_t_port_t::events_t_port_t(zyn_tree_t *parent) :
 void zyn_tree_t::events_t_port_t::on_read(sample_no_t pos)
 {
 	io::mlog << "zyn notes port::on_read" << io::endl;
-	for(const std::pair<int, int>& rch : notes_in::data->recently_changed)
-	if(rch.first < 0)
+        for(const std::pair<int, int>& rch : notes_in::data.sender->recently_changed)
+        if(rch.first < 0) // note height < 0, this will probably not happen...
 	 break;
 	else
 	{
 		// for self_port_t, on_read is not virtual, so we call it manually...
 		// -> TODO?? probably the above comment is deprecated
-		std::pair<int, daw::music_note_properties> p2 = notes_in::data->lines[rch.first][rch.second];
+                std::pair<int, daw::music_note_properties> p2 = notes_in::data.sender->lines[rch.first][rch.second];
 
 		io::mlog << "first, second: " << p2.first << ", " << p2.second.value() << io::endl;
 
