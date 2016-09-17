@@ -130,6 +130,7 @@ void zynaddsubfx_t::run_synth(unsigned long ,
     
      // TODO: not sure about this value:
     set_next_time(time() + buffersize);
+    audio_out::notify_set(time());
     
 }
 

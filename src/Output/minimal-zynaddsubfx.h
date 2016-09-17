@@ -34,6 +34,8 @@ class MiddleWare;
 struct SYNTH_T;
 class Config;
 
+constexpr std::size_t num_voices = 8;
+
 namespace std
 {
 	class thread;
@@ -139,10 +141,25 @@ struct pram : public command_with_ports<PortT>
 template<class T>
 using build_inport = build<pram<in_port_t<T>>>;
 
-struct kit0_t : nnode
+/* TODO : separate header for the above... */
+
+struct kit_t : nnode
 {
 	using nnode::nnode;
 };
+
+class lfo_params_t : public nnode
+{
+public:
+    using nnode::nnode;
+};
+
+class env_params_t : public nnode
+{
+public:
+    using nnode::nnode;
+};
+
 
 class amp_env_t : public nnode
 {
@@ -161,6 +178,18 @@ public:
 	}*/
 };
 
+class freq_env_t : public nnode
+{
+public:
+        using nnode::nnode;
+};
+
+class filter_env_t : public nnode
+{
+public:
+        using nnode::nnode;
+};
+
 class global_t : public nnode
 {
 public:
@@ -173,13 +202,50 @@ class oscil_smp : public nnode
 	using nnode::nnode;
 };
 
-class voice0_t : public nnode
+class voice_t : public nnode
 {
 public:
 	using nnode::nnode;
 	build<oscil_smp> oscil = ctor(this, "OscilSmp");
 	build_inport<int> volume = ctor(this, "PVolume");
 	build_inport<int> panning = ctor(this, "PPanning");
+};
+
+class filter_params_t : public nnode
+{
+public:
+        using nnode::nnode;
+        build<oscil_smp> oscil = ctor(this, "OscilSmp");
+        build_inport<int> volume = ctor(this, "PVolume");
+        build_inport<int> panning = ctor(this, "PPanning");
+};
+
+class oscil_gen_t : public nnode
+{
+public:
+// non-rt
+        using nnode::nnode;
+        build_inport<int> h_mag_type = ctor(this, "Phmagtype");
+        build_inport<int> current_base_func = ctor(this, "Pcurrentbasefunc");
+        build_inport<int> base_func_par = ctor(this, "Pbasefuncpar");
+        build_inport<int> base_func_modulation = ctor(this, "Pbasefuncmodulation");
+        build_inport<int> base_func_modulation_par_1 = ctor(this, "Pbasefuncmodulationpar1");
+        build_inport<int> base_func_modulation_par_2 = ctor(this, "Pbasefuncmodulationpar2");
+        build_inport<int> base_func_modulation_par_3 = ctor(this, "Pbasefuncmodulationpar3");
+        build_inport<int> wave_shaping = ctor(this, "Pwaveshaping");
+        build_inport<int> wave_shaping_function = ctor(this, "Pwaveshapingfunction");
+        build_inport<int> filter_type = ctor(this, "Pfiltertype");
+        build_inport<int> filter_par_1 = ctor(this, "Pfilterpar1");
+        build_inport<int> filter_par_2 = ctor(this, "Pfilterpar2");
+        build_inport<int> filter_before_ws = ctor(this, "Pfilterbeforews");
+        build_inport<int> spectral_adjustment_type = ctor(this, "Psatype");
+        build_inport<int> spectral_adjustment_par = ctor(this, "Psapar");
+        build_inport<int> harmonic_shift = ctor(this, "Pharmonicshift");
+        build_inport<int> harmonic_shift_first = ctor(this, "Pharmonicshiftfirst");
+        build_inport<int> modulation = ctor(this, "Pmodulation");
+        build_inport<int> modulation_par_1 = ctor(this, "Pmodulationpar1");
+        build_inport<int> modulation_par_2 = ctor(this, "Pmodulationpar2");
+        build_inport<int> modulation_par_3 = ctor(this, "Pmodulationpar3");
 };
 
 class padpars : public nnode
@@ -189,6 +255,16 @@ class padpars : public nnode
 	}
 public:
 	using nnode::nnode;
+        build<lfo_params_t> freq_lfo = ctor(this, "FreqLfo");
+        build<lfo_params_t> amp_lfo = ctor(this, "AmpLfo");
+        build<lfo_params_t> filter_lfo = ctor(this, "FilterLfo");
+        build<env_params_t> filter_env = ctor(this, "FilterEnvelope");
+        build<env_params_t> amp_env = ctor(this, "AmpEnvelope");
+        build<env_params_t> freq_env = ctor(this, "FreqEnvelope");
+        build<filter_params_t> filter_params = ctor(this, "GlobalFilter");
+
+// non-RT
+        build<oscil_gen_t> oscil_gen = ctor(this, "oscilgen");
 };
 
 class adpars_t : public nnode
@@ -198,7 +274,7 @@ class adpars_t : public nnode
 	}
 public:
 	using nnode::nnode;
-	build<voice0_t> voice0 = ctor(this, "voice0");
+        build_multi<voice_t, num_voices> voice = ctor(this, "voice");
 	build<global_t> global = ctor(this, "global");
 
 };
@@ -289,7 +365,7 @@ public:
 		return spawn<zyn::padpars>("part0/kit0/padpars");
 	}*/
 	// TODO: add0;
-
+/*
 	class pars_base : public nnode
 	{
 		void on_preinit() { // TODO
@@ -297,13 +373,13 @@ public:
 		}
 	public:
 		using nnode::nnode;
-		build<voice0_t> voice0 = ctor(this, "voice0");
+                build_multi<voice_t> voice = ctor(this, "voice");
 		build<global_t> global = ctor(this, "global");
 	};
 
 	class add_pars : public pars_base {};
 	class pad_pars : public pars_base {};
-
+*/
 	events_t_port_t& note_input() {
 		return events_t_port;
 	}
@@ -327,8 +403,6 @@ public:
 			//return spawn_new<zyn::port<Port>>("efftype");
 		}*/
 		using nnode::nnode;
-		//build<voice0> voice0 = ctor(this, "voice0");
-		//build<global> global = ctor(this, "global");
 	};
 
 
@@ -358,8 +432,8 @@ public:
 		}*/
 		build_inport<int> Ppanning = ctor(this, "Ppanning");
 
-		build<fx_t> partefx = ctor(this, "partefx0"); // TODO: id, maybe as template?
-		build<kit0_t> kit0 = ctor(this, "kit0");
+                build_multi<fx_t, 3> partefx = ctor(this, "partefx");
+                build_multi<kit_t, 16> kit = ctor(this, "kit");
 
 	//	using T = fx_t (zyn_tree_t::*)(const std::string& ext) const;
 	//	const T partefx2 = &zyn_tree_t::spawn<fx_t, 0>;
