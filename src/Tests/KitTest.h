@@ -69,9 +69,9 @@ class KitTest:public CxxTest::TestSuite
             //enable sustain
             part->ctl.setsustain(127);
 
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(64, 127, 0);
-            part->NoteOff(64);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOffSd(64 * MAX_NOTE_SUBDIVISION);
 
             //first note has moved to release state
             //second note has moved to sustain state
@@ -79,7 +79,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_RELEASED|SUSTAIN_BIT,
@@ -88,7 +88,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_RELEASED_AND_SUSTAINED,
@@ -97,7 +97,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -108,9 +108,9 @@ class KitTest:public CxxTest::TestSuite
             //enable sustain
             part->ctl.setsustain(127);
 
-            part->NoteOn(64, 127, 0);
-            part->NoteOff(64);
-            part->NoteOn(64, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOffSd(64 * MAX_NOTE_SUBDIVISION);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             //first note has moved to release state
             //second note has stayed in playing state
@@ -118,7 +118,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_RELEASED|SUSTAIN_BIT,
@@ -127,7 +127,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -136,7 +136,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -148,9 +148,9 @@ class KitTest:public CxxTest::TestSuite
             part->ctl.setsustain(127);
             part->Ppolymode   = false;
 
-            part->NoteOn(64, 127, 0);
-            part->NoteOff(64);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOffSd(64 * MAX_NOTE_SUBDIVISION);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             part->notePool.dump();
 
@@ -160,7 +160,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_RELEASED,
@@ -169,7 +169,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -178,7 +178,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -193,13 +193,13 @@ class KitTest:public CxxTest::TestSuite
 
         //No Kit
         void testNoKitNoLegatoNoMono() {
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -208,7 +208,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -217,7 +217,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -227,13 +227,13 @@ class KitTest:public CxxTest::TestSuite
         void testNoKitYesLegatoNoMono() {
             part->Ppolymode   = false;
             part->Plegatomode = true;
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -242,7 +242,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -251,7 +251,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -272,14 +272,14 @@ class KitTest:public CxxTest::TestSuite
         void testNoKitNoLegatoYesMono() {
             part->Ppolymode   = false;
             part->Plegatomode = false;
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_RELEASED,
@@ -288,7 +288,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -297,7 +297,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -323,15 +323,15 @@ class KitTest:public CxxTest::TestSuite
             part->kit[2].Padenabled = true;
             part->kit[2].Pmaxkey    = 32;
             part->Pkitmode = 1;
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             part->notePool.dump();
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=2,
                     .status=KEY_PLAYING,
@@ -340,7 +340,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=2,
                     .status=KEY_PLAYING,
@@ -349,7 +349,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -389,15 +389,15 @@ class KitTest:public CxxTest::TestSuite
             part->Pkitmode    = 1;
             part->Ppolymode   = false;
             part->Plegatomode = true;
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             part->notePool.dump();
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=2,
                     .status=KEY_PLAYING,
@@ -406,7 +406,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=2,
                     .status=KEY_PLAYING,
@@ -415,7 +415,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -455,15 +455,15 @@ class KitTest:public CxxTest::TestSuite
             part->Pkitmode    = 1;
             part->Ppolymode   = false;
             part->Plegatomode = false;
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             part->notePool.dump();
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=2,
                     .status=KEY_RELEASED,
@@ -472,7 +472,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=2,
                     .status=KEY_PLAYING,
@@ -481,7 +481,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -520,15 +520,15 @@ class KitTest:public CxxTest::TestSuite
             part->kit[2].Padenabled = true;
             part->kit[2].Pmaxkey    = 32;
             part->Pkitmode = 2;
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             part->notePool.dump();
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -537,7 +537,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -546,7 +546,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -576,13 +576,13 @@ class KitTest:public CxxTest::TestSuite
             part->Pkitmode    = 2;
             part->Ppolymode   = false;
             part->Plegatomode = true;
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -591,7 +591,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -600,7 +600,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -627,15 +627,15 @@ class KitTest:public CxxTest::TestSuite
             part->Pkitmode    = 2;
             part->Ppolymode   = false;
             part->Plegatomode = false;
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
 
 
 
             TS_ASSERT_EQUALS(part->notePool.ndesc[0],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=64,
+                    .noteSd=64 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_RELEASED,
@@ -644,7 +644,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[1],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=65,
+                    .noteSd=65 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=1,
                     .status=KEY_PLAYING,
@@ -653,7 +653,7 @@ class KitTest:public CxxTest::TestSuite
             TS_ASSERT_EQUALS(part->notePool.ndesc[2],
                     (NotePool::NoteDescriptor{
                     .age=0,
-                    .note=0,
+                    .noteSd=0 * MAX_NOTE_SUBDIVISION,
                     .sendto=0,
                     .size=0,
                     .status=0,
@@ -674,11 +674,11 @@ class KitTest:public CxxTest::TestSuite
         {
             auto &pool = part->notePool;
             //Verify that without a key limit, several notes can be run
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
-            part->NoteOn(66, 127, 0);
-            part->NoteOn(67, 127, 0);
-            part->NoteOn(68, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(66 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(67 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(68 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             //Verify that notes are spawned as expected
             TS_ASSERT_EQUALS(pool.usedNoteDesc(),  5);
@@ -696,11 +696,11 @@ class KitTest:public CxxTest::TestSuite
             part->setkeylimit(3);
 
             //Replay notes
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
-            part->NoteOn(66, 127, 0);
-            part->NoteOn(67, 127, 0);
-            part->NoteOn(68, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(66 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(67 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(68 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             //Verify that notes are spawned as expected with limit
             TS_ASSERT_EQUALS(pool.getRunningNotes(),  3);//2 entombed
@@ -718,9 +718,9 @@ class KitTest:public CxxTest::TestSuite
             //Now to test note stealing
 
             //Replay notes
-            part->NoteOn(64, 127, 0);
-            part->NoteOn(65, 127, 0);
-            part->NoteOn(66, 127, 0);
+            part->NoteOnSd(64 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(65 * MAX_NOTE_SUBDIVISION, 127, 0);
+            part->NoteOnSd(66 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             //Verify that note pool is full
             TS_ASSERT_EQUALS(pool.usedNoteDesc(),  3);
@@ -734,28 +734,28 @@ class KitTest:public CxxTest::TestSuite
 
             //Inject two more notes which should steal the note
             //descriptors for #66 and #65
-            part->NoteOn(67, 127, 0);
+            part->NoteOnSd(67 * MAX_NOTE_SUBDIVISION, 127, 0);
             pool.cleanup();
-            TS_ASSERT_EQUALS(pool.ndesc[0].note, 64);
-            TS_ASSERT_EQUALS(pool.ndesc[1].note, 65);
-            TS_ASSERT_EQUALS(pool.ndesc[2].note, 66);
+            TS_ASSERT_EQUALS(pool.ndesc[0].noteSd, 64 * MAX_NOTE_SUBDIVISION);
+            TS_ASSERT_EQUALS(pool.ndesc[1].noteSd, 65 * MAX_NOTE_SUBDIVISION);
+            TS_ASSERT_EQUALS(pool.ndesc[2].noteSd, 66 * MAX_NOTE_SUBDIVISION);
             TS_ASSERT_EQUALS(pool.ndesc[2].status, KEY_RELEASED);
-            TS_ASSERT_EQUALS(pool.ndesc[3].note, 67);
+            TS_ASSERT_EQUALS(pool.ndesc[3].noteSd, 67 * MAX_NOTE_SUBDIVISION);
 
-            part->NoteOn(68, 127, 0);
+            part->NoteOnSd(68 * MAX_NOTE_SUBDIVISION, 127, 0);
 
             //Verify that note pool is still full and entombed
             TS_ASSERT_EQUALS(pool.usedNoteDesc(),  5);
             TS_ASSERT_EQUALS(pool.usedSynthDesc(), 5);
 
             //Check that the result is {64, 68, 67}
-            TS_ASSERT_EQUALS(pool.ndesc[0].note, 64);
-            TS_ASSERT_EQUALS(pool.ndesc[1].note, 65);
+            TS_ASSERT_EQUALS(pool.ndesc[0].noteSd, 64 * MAX_NOTE_SUBDIVISION);
+            TS_ASSERT_EQUALS(pool.ndesc[1].noteSd, 65 * MAX_NOTE_SUBDIVISION);
             TS_ASSERT_EQUALS(pool.ndesc[1].status, KEY_RELEASED);
-            TS_ASSERT_EQUALS(pool.ndesc[2].note, 66);
+            TS_ASSERT_EQUALS(pool.ndesc[2].noteSd, 66 * MAX_NOTE_SUBDIVISION);
             TS_ASSERT_EQUALS(pool.ndesc[2].status, KEY_RELEASED);
-            TS_ASSERT_EQUALS(pool.ndesc[3].note, 67);
-            TS_ASSERT_EQUALS(pool.ndesc[4].note, 68);
+            TS_ASSERT_EQUALS(pool.ndesc[3].noteSd, 67 * MAX_NOTE_SUBDIVISION);
+            TS_ASSERT_EQUALS(pool.ndesc[4].noteSd, 68 * MAX_NOTE_SUBDIVISION);
         }
 
         void tearDown() {

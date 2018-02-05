@@ -89,12 +89,12 @@ NotePool::activeNotesIter NotePool::activeNotes(NoteDescriptor &n)
 
 bool NotePool::NoteDescriptor::operator==(NoteDescriptor nd)
 {
-    return age == nd.age && note == nd.note && sendto == nd.sendto && size == nd.size && status == nd.status;
+    return age == nd.age && noteSd == nd.noteSd && sendto == nd.sendto && size == nd.size && status == nd.status;
 }
 
 //return either the first unused descriptor or the last valid descriptor which
 //matches note/sendto
-static int getMergeableDescriptor(uint8_t note, uint8_t sendto, bool legato,
+static int getMergeableDescriptor(note_u_t noteSd, uint8_t sendto, bool legato,
         NotePool::NoteDescriptor *ndesc)
 {
     int desc_id = 0;
@@ -104,7 +104,7 @@ static int getMergeableDescriptor(uint8_t note, uint8_t sendto, bool legato,
 
     if(desc_id != 0) {
         auto &nd = ndesc[desc_id-1];
-        if(nd.age == 0 && nd.note == note && nd.sendto == sendto
+        if(nd.age == 0 && nd.noteSd == noteSd && nd.sendto == sendto
                 && nd.playing() && nd.legatoMirror == legato && nd.canSustain())
             return desc_id-1;
     }
@@ -151,13 +151,13 @@ int NotePool::usedSynthDesc(void) const
     return cnt;
 }
 
-void NotePool::insertNote(uint8_t note, uint8_t sendto, SynthDescriptor desc, bool legato)
+void NotePool::insertNote(note_u_t noteSd, uint8_t sendto, SynthDescriptor desc, bool legato)
 {
     //Get first free note descriptor
-    int desc_id = getMergeableDescriptor(note, sendto, legato, ndesc);
+    int desc_id = getMergeableDescriptor(noteSd, sendto, legato, ndesc);
     assert(desc_id != -1);
 
-    ndesc[desc_id].note         = note;
+    ndesc[desc_id].noteSd       = noteSd;
     ndesc[desc_id].sendto       = sendto;
     ndesc[desc_id].size        += 1;
     ndesc[desc_id].status       = KEY_PLAYING;
@@ -178,15 +178,15 @@ void NotePool::upgradeToLegato(void)
     for(auto &d:activeDesc())
         if(d.playing())
             for(auto &s:activeNotes(d))
-                insertLegatoNote(d.note, d.sendto, s);
+                insertLegatoNote(d.noteSd, d.sendto, s);
 }
 
-void NotePool::insertLegatoNote(uint8_t note, uint8_t sendto, SynthDescriptor desc)
+void NotePool::insertLegatoNote(note_u_t noteSd, uint8_t sendto, SynthDescriptor desc)
 {
     assert(desc.note);
     try {
         desc.note = desc.note->cloneLegato();
-        insertNote(note, sendto, desc, true);
+        insertNote(noteSd, sendto, desc, true);
     } catch (std::bad_alloc &ba) {
         std::cerr << "failed to insert legato note: " << ba.what() << std::endl;
     }
@@ -196,7 +196,7 @@ void NotePool::insertLegatoNote(uint8_t note, uint8_t sendto, SynthDescriptor de
 void NotePool::applyLegato(LegatoParams &par)
 {
     for(auto &desc:activeDesc()) {
-        desc.note = par.midinote;
+        desc.noteSd = par.noteSd;
         for(auto &synth:activeNotes(desc))
             try {
                 synth.note->legatonote(par);
@@ -206,10 +206,10 @@ void NotePool::applyLegato(LegatoParams &par)
     }
 }
 
-void NotePool::makeUnsustainable(uint8_t note)
+void NotePool::makeUnsustainable(note_u_t noteSd)
 {
     for(auto &desc:activeDesc()) {
-        if(desc.note == note) {
+        if(desc.noteSd == noteSd) {
             desc.makeUnsustainable();
             if(desc.sustained())
                 release(desc);
@@ -243,17 +243,23 @@ bool NotePool::existsRunningNote(void) const
 
 int NotePool::getRunningNotes(void) const
 {
-    bool running[256] = {0};
+    uint8_t mask[(MAX_NOTE_VALUE + 7) / 8] = {};
+    int running_count = 0;
+
     for(auto &desc:activeDesc()) {
         //printf("note!(%d)\n", desc.note);
-        if(desc.playing() || desc.sustained())
-            running[desc.note] = true;
+	if(desc.playing() == 0 && desc.sustained() == 0)
+	    continue;
+	if (desc.noteSd >= MAX_NOTE_VALUE)
+	    continue;
+	uint8_t m = 1U << (desc.noteSd % 8);
+	note_u_t o = desc.noteSd / 8;
+	/* check if already counted */
+	if (mask[o] & m)
+	    continue;
+	mask[o] |= m;
+	running_count++;
     }
-
-    int running_count = 0;
-    for(int i=0; i<256; ++i)
-        running_count += running[i];
-
     return running_count;
 }
 void NotePool::enforceKeyLimit(int limit)
@@ -313,10 +319,10 @@ void NotePool::killAllNotes(void)
         kill(d);
 }
 
-void NotePool::killNote(uint8_t note)
+void NotePool::killNote(note_u_t noteSd)
 {
     for(auto &d:activeDesc()) {
-        if(d.note == note)
+        if(d.noteSd == noteSd)
             kill(d);
     }
 }
@@ -426,7 +432,7 @@ void NotePool::dump(void)
             note_id += 1;
             printf(format,
                     note_id, descriptor_id,
-                    d.age, d.note, d.sendto,
+                    d.age, d.noteSd, d.sendto,
                     getStatus(d.status), d.legatoMirror, s.type, s.kit, s.note);
         }
     }

@@ -21,6 +21,7 @@
 #include "Envelope.h"
 #include "ModFilter.h"
 #include "../Containers/ScratchString.h"
+#include "../Containers/NotePool.h"
 #include "../Params/Controller.h"
 #include "../Params/SUBnoteParameters.h"
 #include "../Params/FilterParams.h"
@@ -45,7 +46,7 @@ SUBnote::SUBnote(const SUBnoteParameters *parameters, SynthParams &spars, WatchM
     NoteEnabled(true),
     lfilter(nullptr), rfilter(nullptr)
 {
-    setup(spars.frequency, spars.velocity, spars.portamento, spars.note, false, wm, prefix);
+    setup(spars.frequency, spars.velocity, spars.portamento, spars.noteSd, false, wm, prefix);
 }
 
 float SUBnote::setupFilters(int *pos, bool automation)
@@ -90,7 +91,7 @@ float SUBnote::setupFilters(int *pos, bool automation)
 void SUBnote::setup(float freq,
                     float velocity,
                     int portamento_,
-                    int midinote,
+                    int noteSd,
                     bool legato,
                     WatchManager *wm,
                     const char *prefix)
@@ -119,7 +120,7 @@ void SUBnote::setup(float freq,
         basefreq = 440.0f;
         int fixedfreqET = pars.PfixedfreqET;
         if(fixedfreqET) { //if the frequency varies according the keyboard note
-            float tmp = (midinote - 69.0f) / 12.0f
+            float tmp = (noteSd - 69.0f * MAX_NOTE_SUBDIVISION) / (12.0f * MAX_NOTE_SUBDIVISION)
                 * (powf(2.0f, (fixedfreqET - 1) / 63.0f) - 1.0f);
             if(fixedfreqET <= 64)
                 basefreq *= powf(2.0f, tmp);
@@ -197,7 +198,7 @@ void SUBnote::setup(float freq,
 SynthNote *SUBnote::cloneLegato(void)
 {
     SynthParams sp{memory, ctl, synth, time, legato.param.freq, velocity,
-                   portamento, legato.param.midinote, true};
+                   portamento, legato.param.noteSd, true};
     return memory.alloc<SUBnote>(&pars, sp);
 }
 
@@ -208,7 +209,7 @@ void SUBnote::legatonote(LegatoParams pars)
         return;
 
     try {
-        setup(pars.frequency, pars.velocity, pars.portamento, pars.midinote,
+        setup(pars.frequency, pars.velocity, pars.portamento, pars.noteSd,
               true, wm);
     } catch (std::bad_alloc &ba) {
         std::cerr << "failed to set legato note parameter in SUBnote: " << ba.what() << std::endl;

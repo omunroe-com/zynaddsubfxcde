@@ -409,8 +409,7 @@ static const Ports master_ports = {
        d.reply("/free", "sb", "Part", sizeof(void*), &m->part[i]);
        m->part[i] = p;
        p->initialize_rt();
-       for(int i=0; i<128; ++i)
-           m->activeNotes[i] = 0;
+       memset(m->activeNotes, 0, sizeof(m->activeNotes));
        }},
     {"active_keys:", rProp("Obtain a list of active notes"), 0,
         rBegin;
@@ -705,6 +704,16 @@ Master::Master(const SYNTH_T &synth_, Config* config)
     bToU = NULL;
     uToB = NULL;
 
+    //Setup number of note subdivisions
+    const char *psd = getenv("SUBDIVS");
+    if (psd != 0) {
+        noteSubdivs = 1 << atoi(psd);
+	if (noteSubdivs < 1 || noteSubdivs > MAX_NOTE_SUBDIVISION)
+	    noteSubdivs = MAX_NOTE_SUBDIVISION;
+    } else {
+	noteSubdivs = 1;
+    }
+
     //Setup MIDI Learn
     automate.set_ports(master_ports);
     automate.set_instance(this);
@@ -866,6 +875,25 @@ void Master::defaults()
     ShutUp();
 }
 
+static note_u_t
+ZynMidiNoteToSd(char chanRem, char note)
+{
+#if (MAX_NOTE_SUBDIVISION > 16)
+#error "Please update the code below!"
+#endif
+    note_u_t noteSd = (note_u_t)note * MAX_NOTE_SUBDIVISION;
+    /* bitreverse remainder of channel */
+    if (chanRem & 1)
+        noteSd |= MAX_NOTE_SUBDIVISION / 2;
+    if (chanRem & 2)
+        noteSd |= MAX_NOTE_SUBDIVISION / 4;
+    if (chanRem & 4)
+        noteSd |= MAX_NOTE_SUBDIVISION / 8;
+    if (chanRem & 8)
+        noteSd |= MAX_NOTE_SUBDIVISION / 16;
+    return (noteSd);
+}
+
 /*
  * Note On Messages (velocity=0 for NoteOff)
  */
@@ -873,17 +901,25 @@ void Master::noteOn(char chan, char note, char velocity)
 {
     if(velocity) {
         for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
-            if(chan == part[npart]->Prcvchn) {
-                fakepeakpart[npart] = velocity * 2;
-                if(part[npart]->Penabled)
-                    part[npart]->NoteOn(note, velocity, keyshift);
-            }
+	    int diff = (chan - part[npart]->Prcvchn);
+	    if (diff < 0 || diff >= noteSubdivs)
+		continue;
+	    fakepeakpart[npart] = velocity * 2;
+	    if(part[npart]->Penabled)
+	        part[npart]->NoteOnSd(ZynMidiNoteToSd(diff,note), velocity, keyshift);
         }
         activeNotes[(int)note] = 1;
+	HDDRecorder.triggernow();
     }
-    else
-        this->noteOff(chan, note);
-    HDDRecorder.triggernow();
+    else {
+        for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
+	    int diff = (chan - part[npart]->Prcvchn);
+	    if (diff < 0 || diff >= noteSubdivs || part[npart]->Penabled == 0)
+		continue;
+	    part[npart]->NoteOffSd(ZynMidiNoteToSd(diff,note));
+        }
+	activeNotes[(int)note] = 0;
+    }
 }
 
 /*
@@ -891,10 +927,7 @@ void Master::noteOn(char chan, char note, char velocity)
  */
 void Master::noteOff(char chan, char note)
 {
-    for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
-        if((chan == part[npart]->Prcvchn) && part[npart]->Penabled)
-            part[npart]->NoteOff(note);
-    activeNotes[(int)note] = 0;
+    noteOn(chan, note, 0);
 }
 
 /*
@@ -903,14 +936,15 @@ void Master::noteOff(char chan, char note)
 void Master::polyphonicAftertouch(char chan, char note, char velocity)
 {
     if(velocity) {
-        for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
-            if(chan == part[npart]->Prcvchn)
-                if(part[npart]->Penabled)
-                    part[npart]->PolyphonicAftertouch(note, velocity, keyshift);
-
+        for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
+	    int diff = (chan - part[npart]->Prcvchn);
+	    if (diff < 0 || diff >= noteSubdivs || part[npart]->Penabled == 0)
+		continue;
+	    part[npart]->PolyphonicAftertouchSd(ZynMidiNoteToSd(diff,note), velocity, keyshift);
+        }
     }
     else
-        this->noteOff(chan, note);
+        this->noteOn(chan, note, 0);
 }
 
 /*
@@ -1411,8 +1445,7 @@ void Master::ShutUp()
         insefx[nefx]->cleanup();
     for(int nefx = 0; nefx < NUM_SYS_EFX; ++nefx)
         sysefx[nefx]->cleanup();
-    for(int i = 0; i < int(sizeof(activeNotes)/sizeof(activeNotes[0])); ++i)
-        activeNotes[i] = 0;
+    memset(activeNotes, 0, sizeof(activeNotes));
     vuresetpeaks();
     shutup = 0;
 }

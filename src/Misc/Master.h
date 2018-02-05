@@ -215,6 +215,7 @@ class Master
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
         float  sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];
         int    keyshift;
+	int    noteSubdivs;	/* current number of subdivisions in use */
 
         //information relevent to generating plugin audio samples
         float *bufl;

@@ -257,7 +257,7 @@ unsigned char Microtonal::getoctavesize() const
 /*
  * Get the frequency according the note number
  */
-float Microtonal::getnotefreq(int note, int keyshift) const
+float Microtonal::getnotefreq(note_s_t noteSd, int keyshift) const
 {
     // in this function will appears many times things like this:
     // var=(a+b*100)%b
@@ -265,7 +265,7 @@ float Microtonal::getnotefreq(int note, int keyshift) const
     // This is the same with divisions.
 
     if((Pinvertupdown != 0) && ((Pmappingenabled == 0) || (Penabled == 0)))
-        note = (int) Pinvertupdowncenter * 2 - note;
+        noteSd = (int) Pinvertupdowncenter * 2 * MAX_NOTE_SUBDIVISION - noteSd;
 
     //compute global fine detune
     float globalfinedetunerap =
@@ -273,8 +273,8 @@ float Microtonal::getnotefreq(int note, int keyshift) const
 
     if(Penabled == 0) //12tET
         return powf(2.0f,
-                    (note - PAnote
-                     + keyshift) / 12.0f) * PAfreq * globalfinedetunerap;
+                    (noteSd - PAnote * MAX_NOTE_SUBDIVISION
+                     + keyshift * MAX_NOTE_SUBDIVISION) / (12.0f * MAX_NOTE_SUBDIVISION)) * PAfreq * globalfinedetunerap;
 
     int scaleshift =
         ((int)Pscaleshift - 64 + (int) octavesize * 100) % octavesize;
@@ -290,7 +290,7 @@ float Microtonal::getnotefreq(int note, int keyshift) const
 
     //if the mapping is enabled
     if(Pmappingenabled) {
-        if((note < Pfirstkey) || (note > Plastkey))
+        if((noteSd < (Pfirstkey * MAX_NOTE_SUBDIVISION)) || (noteSd > (Plastkey * MAX_NOTE_SUBDIVISION)))
             return -1.0f;
         //Compute how many mapped keys are from middle note to reference note
         //and find out the proportion between the freq. of middle note and "A" note
@@ -315,9 +315,9 @@ float Microtonal::getnotefreq(int note, int keyshift) const
 
         //Convert from note (midi) to degree (note from the tunning)
         int degoct =
-            (note - (int)Pmiddlenote + (int) Pmapsize
+	    ((noteSd / MAX_NOTE_SUBDIVISION) - (int)Pmiddlenote + (int) Pmapsize
              * 200) / (int)Pmapsize - 200;
-        int degkey = (note - Pmiddlenote + (int)Pmapsize * 100) % Pmapsize;
+        int degkey = ((noteSd / MAX_NOTE_SUBDIVISION) - Pmiddlenote + (int)Pmapsize * 100) % Pmapsize;
         degkey = Pmapping[degkey];
         if(degkey < 0)
             return -1.0f;           //this key is not mapped
@@ -342,7 +342,7 @@ float Microtonal::getnotefreq(int note, int keyshift) const
         return freq * rap_keyshift;
     }
     else {  //if the mapping is disabled
-        int nt    = note - PAnote + scaleshift;
+        int nt    = (noteSd / MAX_NOTE_SUBDIVISION) - PAnote + scaleshift;
         int ntkey = (nt + (int)octavesize * 100) % octavesize;
         int ntoct = (nt - ntkey) / octavesize;
 

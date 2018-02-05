@@ -111,7 +111,7 @@ void noteOn()
     int total_notes = 0;
     double t_on = tic(); // timer before calling func
     for(int i=40; i<100; ++i)
-        total_notes += p->NoteOn(i,100,0);
+        total_notes += p->NoteOnSd(i * MAX_NOTE_SUBDIVISION,100,0);
     double t_off = toc(); // timer when func returns
     printf("%d, ", total_notes);
     if(mode == MODE_PROFILE)

@@ -62,7 +62,7 @@ class MicrotonalTest:public CxxTest::TestSuite
             for(int i = 0; i < 128; ++i)
                 TS_ASSERT_EQUALS(testMicro->Pmapping[i], i);
 
-            TS_ASSERT_DELTA(testMicro->getnotefreq(19, 0), 24.4997f, 0.0001f);
+            TS_ASSERT_DELTA(testMicro->getnotefreq(19 * MAX_NOTE_SUBDIVISION, 0), 24.4997f, 0.0001f);
         }
 
         //Tests saving/loading to XML
@@ -108,7 +108,7 @@ class MicrotonalTest:public CxxTest::TestSuite
             const char *mapping[12] =
             {"0", "x", "1", "x", "2", "3", "x", "4", "x", "5", "x", "6"};
             //for(int i=0;i<20;++i)
-            //    cout << i << ':' << testMicro->getnotefreq(i,0) << endl;
+            //    cout << i << ':' << testMicro->getnotefreq(i * MAX_NOTE_SUBDIVISION,0) << endl;
             //
             //    octave size == 7
             //    find dead notes
@@ -120,7 +120,7 @@ class MicrotonalTest:public CxxTest::TestSuite
             {"9/8", "5/4", "4/3", "3/2", "5/3", "15/8", "2/1"};
             const int numTunings = 7;
             //for(int i=0;i<20;++i)
-            //    cout << i << ':' << testMicro->getnotefreq(i,0) << endl;
+            //    cout << i << ':' << testMicro->getnotefreq(i * MAX_NOTE_SUBDIVISION,0) << endl;
             //    go to middle key and verify the proportions
         }
         /**\TODO test loading from scl and kbm files*/

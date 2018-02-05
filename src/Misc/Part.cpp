@@ -98,10 +98,10 @@ static const Ports partPorts = {
         "If an effect is bypassed"),
     {"captureMin:", rDoc("Capture minimum valid note"), NULL,
         [](const char *, RtData &r)
-        {Part *p = (Part*)r.obj; p->Pminkey = p->lastnote;}},
+        {Part *p = (Part*)r.obj; p->Pminkey = p->lastnoteSd / MAX_NOTE_SUBDIVISION;}},
     {"captureMax:", rDoc("Capture maximum valid note"), NULL,
         [](const char *, RtData &r)
-        {Part *p = (Part*)r.obj; p->Pmaxkey = p->lastnote;}},
+        {Part *p = (Part*)r.obj; p->Pmaxkey = p->lastnoteSd / MAX_NOTE_SUBDIVISION;}},
     {"polyType::c:i", rProp(parameter) rOptions(Polyphonic, Monophonic, Legato)
         rDoc("Synthesis polyphony type\n"
                 "Polyphonic - Each note is played independently\n"
@@ -194,9 +194,9 @@ static const Ports kitPorts = {
     rString(Pname, PART_MAX_NAME_LEN, rDefault(""), "Kit User Specified Label"),
     {"captureMin:", rDoc("Capture minimum valid note"), NULL,
         [](const char *, RtData &r)
-        {Part::Kit *p = (Part::Kit*)r.obj; p->Pminkey = p->parent->lastnote;}},
+        {Part::Kit *p = (Part::Kit*)r.obj; p->Pminkey = p->parent->lastnoteSd / MAX_NOTE_SUBDIVISION;}},
     {"captureMax:", rDoc("Capture maximum valid note"), NULL, [](const char *, RtData &r)
-        {Part::Kit *p = (Part::Kit*)r.obj; p->Pmaxkey = p->parent->lastnote;}},
+        {Part::Kit *p = (Part::Kit*)r.obj; p->Pmaxkey = p->parent->lastnoteSd / MAX_NOTE_SUBDIVISION;}},
     {"padpars-data:b", rProp(internal) rDoc("Set PADsynth data pointer"), 0,
         [](const char *msg, RtData &d) {
             rObject &o = *(rObject*)d.obj;
@@ -275,7 +275,7 @@ Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
     Pname = new char[PART_MAX_NAME_LEN];
 
     oldvolumel = oldvolumer = 0.5f;
-    lastnote   = -1;
+    lastnoteSd   = -1;
 
     defaults();
     assert(partefx[0]);
@@ -450,17 +450,18 @@ static int kit_usage(const Part::Kit *kits, int note, int mode)
 /*
  * Note On Messages
  */
-bool Part::NoteOn(unsigned char note,
-                  unsigned char velocity,
-                  int masterkeyshift)
+bool Part::NoteOnSd(note_u_t noteSd,
+                    unsigned char velocity,
+                    int masterkeyshift)
 {
     //Verify Basic Mode and sanity
     const bool isRunningNote   = notePool.existsRunningNote();
     const bool doingLegato     = isRunningNote && isLegatoMode() &&
                                  lastlegatomodevalid;
+    uint8_t midiNote = noteSd / MAX_NOTE_SUBDIVISION;
 
-    if(!Pnoteon || !inRange(note, Pminkey, Pmaxkey) || notePool.full() ||
-            notePool.synthFull(kit_usage(kit, note, Pkitmode)))
+    if(!Pnoteon || !inRange(midiNote, Pminkey, Pmaxkey) || notePool.full() ||
+            notePool.synthFull(kit_usage(kit, noteSd, Pkitmode)))
         return false;
 
     verifyKeyMode();
@@ -468,10 +469,11 @@ bool Part::NoteOn(unsigned char note,
 
     //Preserve Note Stack
     if(isMonoMode() || isLegatoMode()) {
-        monomemPush(note);
-        monomem[note].velocity  = velocity;
-        monomem[note].mkeyshift = masterkeyshift;
-
+	if (noteSd < MAX_NOTE_VALUE) {
+		monomemPush(noteSd);
+		monomem[noteSd].velocity  = velocity;
+		monomem[noteSd].mkeyshift = masterkeyshift;
+	}
     } else if(!monomemEmpty())
         monomemClear();
 
@@ -485,13 +487,13 @@ bool Part::NoteOn(unsigned char note,
     const float vel          = getVelocity(velocity, Pvelsns, Pveloffs);
     const int   partkeyshift = (int)Pkeyshift - 64;
     const int   keyshift     = masterkeyshift + partkeyshift;
-    const float notebasefreq = getBaseFreq(note, keyshift);
+    const float notebasefreq = getBaseFreq(noteSd, keyshift);
 
     if(notebasefreq < 0)
         return false;
 
     //Portamento
-    lastnote = note;
+    lastnoteSd = noteSd;
     if(oldfreq < 1.0f)
         oldfreq = notebasefreq;//this is only the first note is played
 
@@ -507,35 +509,35 @@ bool Part::NoteOn(unsigned char note,
 
     //Adjust Existing Notes
     if(doingLegato) {
-        LegatoParams pars = {notebasefreq, vel, portamento, note, true};
+        LegatoParams pars = {notebasefreq, vel, portamento, noteSd, true};
         notePool.applyLegato(pars);
         return true;
     }
 
     if(Ppolymode)
-        notePool.makeUnsustainable(note);
+        notePool.makeUnsustainable(noteSd);
 
     //Create New Notes
     for(uint8_t i = 0; i < NUM_KIT_ITEMS; ++i) {
         ScratchString pre = prefix;
         auto &item = kit[i];
-        if(Pkitmode != 0 && !item.validNote(note))
+        if(Pkitmode != 0 && !item.validNote(midiNote))
             continue;
 
         SynthParams pars{memory, ctl, synth, time, notebasefreq, vel,
-            portamento, note, false};
+            portamento, noteSd, false};
         const int sendto = Pkitmode ? item.sendto() : 0;
 
         try {
             if(item.Padenabled)
-                notePool.insertNote(note, sendto,
+                notePool.insertNote(noteSd, sendto,
                         {memory.alloc<ADnote>(kit[i].adpars, pars,
                             wm, (pre+"kit"+i+"/adpars/").c_str), 0, i});
             if(item.Psubenabled)
-                notePool.insertNote(note, sendto,
+                notePool.insertNote(noteSd, sendto,
                         {memory.alloc<SUBnote>(kit[i].subpars, pars, wm, (pre+"kit"+i+"/subpars/").c_str), 1, i});
             if(item.Ppadenabled)
-                notePool.insertNote(note, sendto,
+                notePool.insertNote(noteSd, sendto,
                         {memory.alloc<PADnote>(kit[i].padpars, pars, interpolation, wm,
                             (pre+"kit"+i+"/padpars/").c_str), 2, i});
         } catch (std::bad_alloc & ba) {
@@ -558,14 +560,14 @@ bool Part::NoteOn(unsigned char note,
 /*
  * Note Off Messages
  */
-void Part::NoteOff(unsigned char note) //release the key
+void Part::NoteOffSd(note_u_t noteSd) //release the key
 {
     // This note is released, so we remove it from the list.
     if(!monomemEmpty())
-        monomemPop(note);
+        monomemPop(noteSd);
 
     for(auto &desc:notePool.activeDesc()) {
-        if(desc.note != note || !desc.playing())
+        if(desc.noteSd != noteSd || !desc.playing())
             continue;
         if(!ctl.sustain.sustain) { //the sustain pedal is not pushed
             if((isMonoMode() || isLegatoMode()) && !monomemEmpty())
@@ -582,22 +584,23 @@ void Part::NoteOff(unsigned char note) //release the key
     }
 }
 
-void Part::PolyphonicAftertouch(unsigned char note,
-                                unsigned char velocity,
-                                int masterkeyshift)
+void Part::PolyphonicAftertouchSd(note_u_t noteSd,
+				  unsigned char velocity,
+				  int masterkeyshift)
 {
     (void) masterkeyshift;
 
-    if(!Pnoteon || !inRange(note, Pminkey, Pmaxkey) || Pdrummode)
+    uint8_t midiNote = noteSd / MAX_NOTE_SUBDIVISION;
+    if(!Pnoteon || !inRange(midiNote, Pminkey, Pmaxkey) || Pdrummode)
         return;
 
     // MonoMem stuff:
-    if(!Ppolymode)   // if Poly is off
-        monomem[note].velocity = velocity;       // Store this note's velocity.
+    if(!Ppolymode && noteSd < MAX_NOTE_VALUE)      // if Poly is off
+        monomem[noteSd].velocity = velocity;       // Store this note's velocity.
 
     const float vel = getVelocity(velocity, Pvelsns, Pveloffs);
     for(auto &d:notePool.activeDesc()) {
-        if(d.note == note && d.playing())
+        if(d.noteSd == noteSd && d.playing())
             for(auto &s:notePool.activeNotes(d))
                 s.note->setVelocity(vel);
     }
@@ -702,7 +705,7 @@ void Part::ReleaseSustainedKeys()
 {
     // Let's call MonoMemRenote() on some conditions:
     if((isMonoMode() || isLegatoMode()) && !monomemEmpty())
-        if(monomemBack() != lastnote) // Sustain controller manipulation would cause repeated same note respawn without this check.
+        if(monomemBack() != lastnoteSd) // Sustain controller manipulation would cause repeated same note respawn without this check.
             MonoMemRenote();  // To play most recent still held note.
 
     for(auto &d:notePool.activeDesc())
@@ -723,22 +726,22 @@ void Part::ReleaseAllKeys()
                 s.note->releasekey();
 }
 
-// Call NoteOn(...) with the most recent still held key as new note
+// Call NoteOnSd(...) with the most recent still held key as new note
 // (Made for Mono/Legato).
 void Part::MonoMemRenote()
 {
-    unsigned char mmrtempnote = monomemBack(); // Last list element.
-    monomemPop(mmrtempnote); // We remove it, will be added again in NoteOn(...).
-    NoteOn(mmrtempnote, monomem[mmrtempnote].velocity,
+    note_u_t mmrtempnote = monomemBack(); // Last list element.
+    monomemPop(mmrtempnote); // We remove it, will be added again in NoteOnSd(...).
+    NoteOnSd(mmrtempnote, monomem[mmrtempnote].velocity,
             monomem[mmrtempnote].mkeyshift);
 }
 
-float Part::getBaseFreq(int note, int keyshift) const
+float Part::getBaseFreq(note_s_t noteSd, int keyshift) const
 {
     if(Pdrummode)
-        return 440.0f * powf(2.0f, (note - 69.0f) / 12.0f);
+	return 440.0f * powf(2.0f, (noteSd - 69.0f * MAX_NOTE_SUBDIVISION) / (12.0f * MAX_NOTE_SUBDIVISION));
     else
-        return microtonal->getnotefreq(note, keyshift);
+        return microtonal->getnotefreq(noteSd, keyshift);
 }
 
 float Part::getVelocity(uint8_t velocity, uint8_t velocity_sense,
@@ -757,7 +760,7 @@ void Part::verifyKeyMode(void)
             fprintf(stderr,
                 "WARNING: Poly & Legato modes are On, that shouldn't happen\n"
                 "Disabling Legato mode...\n"
-                "(Part.cpp::NoteOn(..))\n");
+                "(Part.cpp::NoteOnSd(..))\n");
             Plegatomode = 0;
     }
 }
@@ -1053,44 +1056,44 @@ void Part::kill_rt(void)
     notePool.killAllNotes();
 }
 
-void Part::monomemPush(char note)
+void Part::monomemPush(note_u_t noteSd)
 {
     for(int i=0; i<256; ++i)
-        if(monomemnotes[i]==note)
+        if(monomemnotes_sd[i]==noteSd)
             return;
 
     for(int i=254;i>=0; --i)
-        monomemnotes[i+1] = monomemnotes[i];
-    monomemnotes[0] = note;
+        monomemnotes_sd[i+1] = monomemnotes_sd[i];
+    monomemnotes_sd[0] = noteSd;
 }
 
-void Part::monomemPop(char note)
+void Part::monomemPop(note_u_t noteSd)
 {
     int note_pos=-1;
     for(int i=0; i<256; ++i)
-        if(monomemnotes[i]==note)
+        if(monomemnotes_sd[i]==noteSd)
             note_pos = i;
     if(note_pos != -1) {
         for(int i=note_pos; i<256; ++i)
-            monomemnotes[i] = monomemnotes[i+1];
-        monomemnotes[255] = -1;
+            monomemnotes_sd[i] = monomemnotes_sd[i+1];
+        monomemnotes_sd[255] = -1;
     }
 }
 
-char Part::monomemBack(void) const
+note_u_t Part::monomemBack(void) const
 {
-    return monomemnotes[0];
+    return monomemnotes_sd[0];
 }
 
 bool Part::monomemEmpty(void) const
 {
-    return monomemnotes[0] == -1;
+  return (note_s_t)monomemnotes_sd[0] == -1;
 }
 
 void Part::monomemClear(void)
 {
     for(int i=0; i<256; ++i)
-        monomemnotes[i] = -1;
+        monomemnotes_sd[i] = (note_u_t)-1;
 }
 
 void Part::getfromXMLinstrument(XMLwrapper& xml)

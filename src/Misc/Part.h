@@ -43,13 +43,13 @@ class Part
         // Midi commands implemented
 
         //returns true when note is successfully applied
-        bool NoteOn(unsigned char note,
+        bool NoteOnSd(note_u_t noteSd,
                     unsigned char velocity,
                     int masterkeyshift) REALTIME;
-        void NoteOff(unsigned char note) REALTIME;
-        void PolyphonicAftertouch(unsigned char note,
-                                  unsigned char velocity,
-                                  int masterkeyshift) REALTIME;
+        void NoteOffSd(note_u_t noteSd) REALTIME;
+        void PolyphonicAftertouchSd(note_u_t noteSd,
+				    unsigned char velocity,
+				    int masterkeyshift) REALTIME;
         void AllNotesOff() REALTIME; //panic
         void SetController(unsigned int type, int par) REALTIME;
         void ReleaseSustainedKeys() REALTIME; //this is called when the sustain pedal is released
@@ -153,13 +153,13 @@ class Part
         unsigned char Pefxroute[NUM_PART_EFX]; //how the effect's output is routed(to next effect/to out)
         bool Pefxbypass[NUM_PART_EFX]; //if the effects are bypassed
 
-        int lastnote;
+        int lastnoteSd;
 
         const static rtosc::Ports &ports;
 
     private:
         void MonoMemRenote(); // MonoMem stuff.
-        float getBaseFreq(int note, int keyshift) const;
+        float getBaseFreq(note_s_t note, int keyshift) const;
         float getVelocity(uint8_t velocity, uint8_t velocity_sense,
                 uint8_t velocity_offset) const;
         void verifyKeyMode(void);
@@ -177,17 +177,17 @@ class Part
         bool lastlegatomodevalid; // To keep track of previous legatomodevalid.
 
         // MonoMem stuff
-        void monomemPush(char note);
-        void monomemPop(char note);
-        char monomemBack(void) const;
+        void monomemPush(note_u_t note);
+        void monomemPop(note_u_t note);
+        note_u_t monomemBack(void) const;
         bool monomemEmpty(void) const;
         void monomemClear(void);
 
-        short monomemnotes[256]; // A list to remember held notes.
+        note_u_t monomemnotes_sd[256]; // A list to remember held notes.
         struct {
             unsigned char velocity;
             int mkeyshift; // I'm not sure masterkeyshift should be remembered.
-        } monomem[256];
+        } monomem[MAX_NOTE_VALUE];
         /* 256 is to cover all possible note values.
            monomem[] is used in conjunction with the list to
            store the velocity and masterkeyshift values of a given note (the list only store note values).

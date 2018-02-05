@@ -16,21 +16,24 @@
 
 //Expected upper bound of synths given that max polyphony is hit
 #define EXPECTED_USAGE 3
+#define MAX_NOTE_SUBDIVISION 16	/* per half-step */
+#define MAX_NOTE_VALUE (256 * MAX_NOTE_SUBDIVISION)
 
 namespace zyn {
+typedef uint16_t note_u_t;	/* unsigned note type */
+typedef int16_t note_s_t;	/* signed note type */
 
 struct LegatoParams;
 class NotePool
 {
     public:
-        typedef uint8_t note_t;
         //Currently this wastes a ton of bits due ot the legatoMirror flag
         struct NoteDescriptor {
             //acceptable overlap after 2 minutes
             //run time at 48kHz 8 samples per buffer
             //19 bit minimum
             uint32_t age;
-            uint8_t note;
+            note_u_t noteSd;      /* subdivided note */
             uint8_t sendto;
             //max of 16 kit elms and 3 kit items per
             uint8_t size;
@@ -117,13 +120,13 @@ class NotePool
         NotePool(void);
 
         //Operations
-        void insertNote(uint8_t note, uint8_t sendto, SynthDescriptor desc, bool legato=false);
-        void insertLegatoNote(uint8_t note, uint8_t sendto, SynthDescriptor desc);
+        void insertNote(note_u_t note, uint8_t sendto, SynthDescriptor desc, bool legato=false);
+        void insertLegatoNote(note_u_t note, uint8_t sendto, SynthDescriptor desc);
 
         void upgradeToLegato(void);
         void applyLegato(LegatoParams &par);
 
-        void makeUnsustainable(uint8_t note);
+        void makeUnsustainable(note_u_t note);
 
         bool full(void) const;
         bool synthFull(int sdesc_count) const;
@@ -134,11 +137,11 @@ class NotePool
         void enforceKeyLimit(int limit);
 
         void releasePlayingNotes(void);
-        void releaseNote(note_t note);
+        void releaseNote(note_u_t note);
         void release(NoteDescriptor &d);
 
         void killAllNotes(void);
-        void killNote(note_t note);
+        void killNote(note_u_t note);
         void kill(NoteDescriptor &d);
         void kill(SynthDescriptor &s);
         void entomb(NoteDescriptor &d);

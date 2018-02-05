@@ -27,7 +27,7 @@ struct SynthParams
     float     frequency; //Note base frequency
     float     velocity;  //Velocity of the Note
     bool      portamento;//True if portamento is used for this note
-    int       note;      //Integer value of the note
+    int       noteSd;    //Integer value of the note
     bool      quiet;     //Initial output condition for legato notes
 };
 
@@ -36,7 +36,7 @@ struct LegatoParams
     float frequency;
     float velocity;
     bool portamento;
-    int midinote;
+    int noteSd;
     bool externcall;
 };
 
@@ -94,7 +94,7 @@ class SynthNote
                 struct { // Note parameters
                     float freq, vel;
                     bool  portamento;
-                    int   midinote;
+                    int   noteSd;
                 } param;
                 const SYNTH_T &synth;
 
@@ -102,7 +102,7 @@ class SynthNote
                 float getFreq() {return param.freq; }
                 float getVelocity() {return param.vel; }
                 bool  getPortamento() {return param.portamento; }
-                int getMidinote() {return param.midinote; }
+                int getNoteSd() {return param.noteSd; }
                 void setSilent(bool silent_) {silent = silent_; }
                 void setDecounter(int decounter_) {decounter = decounter_; }
         } legato;
